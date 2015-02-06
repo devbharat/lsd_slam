@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rosbag
   cmake_modules
+  gtsam_catkin
 )
 
 find_package(Eigen REQUIRED)
@@ -42,7 +43,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
   LIBRARIES lsdslam
   DEPENDS Eigen SuiteSparse
-  DEPENDS libg2o 
+  DEPENDS libg2o gtsam_catkin
 )
 
 # SSE flags
@@ -83,6 +84,9 @@ set(SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/ROS/ROSOutput3DWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
 )
+
+#hack to force eigen include patch 
+set(EIGEN3_INCLUDE_DIR "/home/bharat/Documents/system-eigen/patched-Eigen/include/eigen3")
 
 include_directories(
   include
