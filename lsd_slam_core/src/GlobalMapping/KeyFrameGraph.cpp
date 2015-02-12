@@ -383,13 +383,16 @@ bool KeyFrameGraph::addElementsFromBuffer()
 
 #ifdef USE_GTSAM_OPT
 	//DEBUG BIG TODO TAK needs to be in insert constraint with original information matrix
-	gtsam::noiseModel::Diagonal::shared_ptr odometryNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1));
+	//gtsam::noiseModel::Diagonal::shared_ptr odometryNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1));
 #endif	
 
 	keyframesForRetrackMutex.lock();
 	for (auto newKF : newKeyframesBuffer)
 	{
 		graph.addVertex(newKF->pose->graphVertex);
+#ifdef USE_GTSAM_OPT
+		//Add GPSlike Factors here
+#endif	
 		assert(!newKF->pose->isInGraph);
 		newKF->pose->isInGraph = true;
 
@@ -405,7 +408,7 @@ bool KeyFrameGraph::addElementsFromBuffer()
 		graph.addEdge(edge->edge);
 #ifdef USE_GTSAM_OPT
 		//Add BetweenFactors
-		graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),odometryNoise));
+		graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),gtsam::noiseModel::Gaussian::Information(edge->information)));
 #endif	
 
 		added = true;
