@@ -34,6 +34,7 @@
 #include <gtsam/geometry/Moses3.h>
 #include <gtsam/inference/Key.h>
 #include <gtsam/slam/BetweenFactor.h>
+#include <gtsam/slam/PriorFactor.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>

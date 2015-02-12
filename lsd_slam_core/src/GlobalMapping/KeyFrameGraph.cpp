@@ -95,6 +95,12 @@ KeyFrameGraph::KeyFrameGraph()
 #ifdef USE_GTSAM_OPT
 	//optimizerGtsam(graphGtsam, initialEstimateGtsam);
 	//marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
+
+	//DEBUG adding initial unary edge
+	gtsam::Moses3 priorMean(moses3FromSim3(Sophus::Sim3d())); // prior at origin
+	gtsam::noiseModel::Diagonal::shared_ptr priorNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01));
+	graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1, priorMean, priorNoise));
+
 #endif
 
 
