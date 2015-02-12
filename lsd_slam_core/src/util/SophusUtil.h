@@ -19,10 +19,14 @@
 */
 
 #pragma once
+#define USE_GTSAM_OPT
 
 #include "sophus/sim3.hpp"
 #include "sophus/se3.hpp"
 
+#ifdef USE_GTSAM_OPT
+#include <gtsam/geometry/Moses3.h>
+#endif
 
 
 // Typedef and conversion macro for Eigen matrices to currently used type.
@@ -62,6 +66,21 @@ inline SE3 se3FromSim3(const Sim3& sim3)
 	return SE3(sim3.quaternion(), sim3.translation());
 }
 
+#ifdef USE_GTSAM_OPT
+
+// Tested
+inline Sim3 sim3FromMoses3(const gtsam::Moses3& moses3)
+{
+	return Sim3(moses3.gtsamSophus::gSim3::quaternion(), moses3.gtsamSophus::gSim3::translation());
+}
+
+// Tested 
+inline gtsam::Moses3 moses3FromSim3(const Sim3& sim3)
+{
+	//return gtsam::Moses3(sim3.quaternion(), sim3.translation());  // Gives error for some reason.
+	return gtsam::Moses3(sim3.matrix());
+}
+#endif
 
 }
 

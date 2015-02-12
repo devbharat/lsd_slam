@@ -29,6 +29,20 @@
 #include "deque"
 
 
+#ifdef USE_GTSAM_OPT
+
+#include <gtsam/geometry/Moses3.h>
+#include <gtsam/inference/Key.h>
+#include <gtsam/slam/BetweenFactor.h>
+#include <gtsam/nonlinear/NonlinearFactorGraph.h>
+#include <gtsam/nonlinear/Values.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
+#include <gtsam/nonlinear/Marginals.h>
+
+#endif  
+// USE_GTSAM_OPT
+
+
 namespace lsd_slam
 {
 
@@ -50,6 +64,10 @@ struct KFConstraintStruct
 		robustKernel = 0;
 		edge = 0;
 
+#ifdef USE_GTSAM_OPT
+		//betweenFactor = 0; //DEBUG
+#endif
+
 		usage = meanResidual = meanResidualD = meanResidualP = 0;
 		reciprocalConsistency = 0;
 
@@ -67,6 +85,10 @@ struct KFConstraintStruct
 	g2o::RobustKernel* robustKernel;
 	EdgeSim3* edge;
 
+#ifdef USE_GTSAM_OPT
+//	gtsam::BetweenFactor<gtsam::Moses3>* betweenFactor; //shared_ptr error
+#endif
+
 	float usage;
 	float meanResidualD;
 	float meanResidualP;
@@ -77,6 +99,47 @@ struct KFConstraintStruct
 	int idxInAllEdges;
 };
 
+/*
+#ifdef USE_GTSAM_OPT
+struct KFConstraintStructGtsam
+{
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	inline KFConstraintStructGtsam()
+	{
+		firstFrame = secondFrame = 0;
+		information.setZero();
+		betweenFactor = 0;
+
+		usage = meanResidual = meanResidualD = meanResidualP = 0;
+		reciprocalConsistency = 0;
+
+
+		idxInAllEdges = -1;
+	}
+
+	~KFConstraintStructGtsam();
+
+
+	Frame* firstFrame;
+	Frame* secondFrame;
+	gtsam::Moses3 secondToFirst;
+	Eigen::Matrix<double, 7, 7> information;
+	gtsam::BetweenFactor<gtsam::Moses3>* betweenFactor;
+
+
+	float usage;
+	float meanResidualD;
+	float meanResidualP;
+	float meanResidual;
+
+	float reciprocalConsistency;
+
+	int idxInAllEdges;
+};
+#endif
+// USE_GTSAM_OPT
+*/
 
 
 
@@ -115,7 +178,11 @@ public:
 	 * If isOdometryConstraint is set, scaleInformation is ignored.
 	 */
 	void insertConstraint(KFConstraintStruct* constraint);
-
+/*
+#ifdef USE_GTSAM_OPT
+	void insertConstraint(KFConstraintStructGtsam* constraint);
+#endif
+*/
 	
 	/** Optimizes the graph. Does not update the keyframe poses,
 	 *  only the vertex poses. You must call updateKeyFramePoses() afterwards. */
@@ -133,6 +200,10 @@ public:
 	int totalPoints;
 	int totalEdges;
 	int totalVertices;
+
+#ifdef USE_GTSAM_OPT
+	int totalEdgesGtsam;
+#endif
 
 
 	//=========================== Keyframe & Posen Lists & Maps ====================================
@@ -157,7 +228,12 @@ public:
 	boost::shared_mutex edgesListsMutex;
 	std::vector< KFConstraintStruct*, Eigen::aligned_allocator<KFConstraintStruct*> > edgesAll;
 
-
+/*
+#ifdef USE_GTSAM_OPT
+	boost::shared_mutex edgesListsMutexGtsam;
+	std::vector< KFConstraintStructGtsam*, Eigen::aligned_allocator<KFConstraintStructGtsam*> > edgesAllGtsam;	
+#endif
+*/
 
 	// contains ALL frame poses, chronologically, as soon as they are tracked.
 	// the corresponding frame may have been removed / deleted in the meantime.
@@ -172,17 +248,27 @@ public:
 	boost::mutex keyframesForRetrackMutex;
 	std::deque<Frame*> keyframesForRetrack;
 
-
-
 private:
 
 	/** Pose graph representation in g2o */
 	g2o::SparseOptimizer graph;
-	
+
+#ifdef USE_GTSAM_OPT
+	gtsam::NonlinearFactorGraph graphGtsam;
+	gtsam::Values initialEstimateGtsam;	
+	//gtsam::LevenbergMarquardtOptimizer optimizerGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& );
+	gtsam::Values resultGtsam; //TODO cannot be calulated every itiration! Somehow needs to be 'merged' or stored into frame poses
+	//gtsam::Marginals marginalsGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& ); //TODO same as above. Goes to information somehow
+#endif
+
 	std::vector< Frame*, Eigen::aligned_allocator<Frame*> > newKeyframesBuffer;
 	std::vector< KFConstraintStruct*, Eigen::aligned_allocator<FramePoseStruct*> > newEdgeBuffer;
 
-
+/*
+#ifdef USE_GTSAM_OPT
+	std::vector< KFConstraintStructGtsam*, Eigen::aligned_allocator<FramePoseStruct*> > newEdgeBufferGtsam;
+#endif
+*/
 	int nextEdgeId;
 };
 

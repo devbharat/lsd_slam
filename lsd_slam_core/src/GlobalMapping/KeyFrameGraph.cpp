@@ -60,7 +60,21 @@ KFConstraintStruct::~KFConstraintStruct()
 {
 	if(edge != 0)
 		delete edge;
+#ifdef USE_GTSAM_OPT
+		//delete betweenFactor; // DEBUG
+#endif
 }
+
+/*
+#ifdef USE_GTSAM_OPT
+KFConstraintStructGtsam::~KFConstraintStructGtsam()
+{
+	if(betweenFactor != 0)
+		delete betweenFactor;
+}
+#endif
+*/
+
 
 KeyFrameGraph::KeyFrameGraph()
 : nextEdgeId(0)
@@ -78,6 +92,12 @@ KeyFrameGraph::KeyFrameGraph()
 	blockSolver->setWriteDebug(true);
 	algorithm->setWriteDebug(true);
 
+#ifdef USE_GTSAM_OPT
+	//optimizerGtsam(graphGtsam, initialEstimateGtsam);
+	//marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
+#endif
+
+
 
 	totalPoints=0;
 	totalEdges=0;
@@ -92,6 +112,13 @@ KeyFrameGraph::~KeyFrameGraph()
 	for (KFConstraintStruct* edge : newEdgeBuffer)
 		delete edge;	// deletes the g2oedge, which deletes the kernel.
 
+/*
+#ifdef USE_GTSAM_OPT
+	// deletes edges
+	for (KFConstraintStructGtsam* edge : newEdgeBufferGtsam)
+		delete edge;	// deletes the gtsamedge, which deletes the kernel.
+#endif
+*/
 	// deletes keyframes (by deleting respective shared pointers).
 
 	idToKeyFrame.clear();
@@ -170,7 +197,7 @@ void KeyFrameGraph::dumpMap(std::string folder)
 		usedPixels[i] = keyframesAll[i]->numPoints / (float)keyframesAll[i]->numMappablePixels;
 	}
 
-
+	// TODO for gtsam
 	edgesListsMutex.lock_shared();
 	for(unsigned int i=0;i<edgesAll.size();i++)
 	{
@@ -243,10 +270,14 @@ void KeyFrameGraph::addKeyFrame(Frame* frame)
 	Sophus::Sim3d camToWorld_estimate = frame->getScaledCamToWorld();
 
 	if(!frame->hasTrackingParent())
-		vertex->setFixed(true);
+		vertex->setFixed(true);  //  TODO: How to manage with GTSAM ?
 
 	vertex->setEstimate(camToWorld_estimate);
 	vertex->setMarginalized(false);
+
+#ifdef USE_GTSAM_OPT
+	initialEstimateGtsam.insert(frame->id(),moses3FromSim3(camToWorld_estimate)); // Notice frameID are increasing, but not consicutive!
+#endif
 
 	frame->pose->graphVertex = vertex;
 
@@ -272,6 +303,14 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
 	assert(constraint->secondFrame->pose->graphVertex != nullptr);
 	edge->setVertex(1, constraint->secondFrame->pose->graphVertex);
 
+#ifdef USE_GTSAM_OPT
+	// DEBUG TEMP CONST NOISE MODEL
+	//gtsam::noiseModel::Diagonal::shared_ptr odometryNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1));
+	
+	//Create between factor with noise model and add to constraint
+	//constraint->betweenFactor = new gtsam::BetweenFactor<gtsam::Moses3>(constraint->firstFrame->id(),constraint->secondFrame->id(),moses3FromSim3(constraint->secondToFirst),odometryNoise);	
+#endif
+
 	constraint->edge = edge;
 	newEdgeBuffer.push_back(constraint);
 
@@ -293,9 +332,53 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
 }
 
 
+/*
+#ifdef USE_GTSAM_OPT
+void KeyFrameGraph::insertConstraint(KFConstraintStructGtsam* constraint)
+{
+	totalEdgesGtsam++;
+
+	//edge->setMeasurement(constraint->secondToFirst);
+	//edge->setInformation(constraint->information);
+	//edge->setRobustKernel(constraint->robustKernel);
+
+	assert(constraint->firstFrame->pose->graphVertex != nullptr);
+	assert(constraint->secondFrame->pose->graphVertex != nullptr);
+
+	// DEBUG TEMP CONST NOISE MODEL
+	gtsam::noiseModel::Diagonal::shared_ptr odometryNoise = noiseModel::Diagonal::Sigmas((Vector(7) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1));
+
+	constraint->betweenFactor = new gtsam::BetweenFactor<Moses3>(constraint->firstFrame->id(),constraint->secondFrame->id(),moses3FromSim3(constraint->secondToFirst),odometryNoise);
+	newEdgeBufferGtsam.push_back(constraint);
+
+	// MODIFIES FRAMES (Also happening in parallel in g2o constrain fn above. Should happen in only one, hence commented below) TODO DEBUG
+	//constraint->firstFrame->neighbors.insert(constraint->secondFrame);
+	//constraint->secondFrame->neighbors.insert(constraint->firstFrame);
+
+	for(int i=0;i<totalVertices;i++)
+	{
+		//shortestDistancesMap
+	}
+
+
+
+	edgesListsMutexGtsam.lock();
+	constraint->idxInAllEdges = edgesAllGtsam.size();
+	edgesAllGtsam.push_back(constraint);
+	edgesListsMutexGtsam.unlock();
+}
+#endif
+*/
+
+
 bool KeyFrameGraph::addElementsFromBuffer()
 {
-	bool added = false;
+	bool added = false; //WTF is this doing ?
+
+#ifdef USE_GTSAM_OPT
+	//DEBUG BIG TODO TAK needs to be in insert constraint with original information matrix
+	gtsam::noiseModel::Diagonal::shared_ptr odometryNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1));
+#endif	
 
 	keyframesForRetrackMutex.lock();
 	for (auto newKF : newKeyframesBuffer)
@@ -314,10 +397,26 @@ bool KeyFrameGraph::addElementsFromBuffer()
 	for (auto edge : newEdgeBuffer)
 	{
 		graph.addEdge(edge->edge);
+#ifdef USE_GTSAM_OPT
+		//Add BetweenFactors
+		graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),odometryNoise));
+#endif	
+
 		added = true;
 	}
 	newEdgeBuffer.clear();
 
+/*
+	//Add BetweenFactors
+#ifdef USE_GTSAM_OPT
+	for (auto edge : newEdgeBufferGtsam)
+	{
+		graphGtsam.add(edge->betweenFactor);
+		added = true;
+	}
+	newEdgeBufferGtsam.clear();
+#endif
+*/
 	return added;
 }
 
@@ -330,6 +429,13 @@ int KeyFrameGraph::optimize(int num_iterations)
 	graph.setVerbose(false); // printOptimizationInfo
 	graph.initializeOptimization();
 	
+#ifdef USE_GTSAM_OPT
+	//DEBUGresultGtsam = optimizerGtsam.optimize();
+	gtsam::LevenbergMarquardtOptimizer optimizerGtsam(graphGtsam, initialEstimateGtsam);
+	resultGtsam = optimizerGtsam.optimize();
+	graphGtsam.print("Graph\n");
+	gtsam::Marginals marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
+#endif
 
 	return graph.optimize(num_iterations, false);
 
