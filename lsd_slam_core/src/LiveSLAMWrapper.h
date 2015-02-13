@@ -104,6 +104,7 @@ private:
 	int gpsSeqNumber;
 
 	sensor_msgs::NavSatFix gpsNow;
+	Timestamp gpsTimeStamp;
 
 };
 

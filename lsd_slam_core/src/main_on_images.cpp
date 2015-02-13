@@ -241,7 +241,7 @@ int main( int argc, char** argv )
 		if(runningIDX == 0)
 			system->randomInit(image.data, fakeTimeStamp, runningIDX);
 		else
-			system->trackFrame(image.data, fakeGps,runningIDX ,hz == 0,fakeTimeStamp);
+			system->trackFrame(image.data, fakeGps, fakeTimeStamp,runningIDX ,hz == 0,fakeTimeStamp);
 		runningIDX++;
 		fakeTimeStamp+=0.03;
 

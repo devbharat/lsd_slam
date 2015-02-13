@@ -152,15 +152,16 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
 	}
 	else if(isInitialized && monoOdometry != nullptr)
 	{
-		monoOdometry->trackFrame(grayImg.data, gpsNow,imageSeqNumber,false,imgTime.toSec());
+		monoOdometry->trackFrame(grayImg.data, gpsNow, gpsTimeStamp.toSec(),imageSeqNumber,false,imgTime.toSec());
 	}
 }
 
-void LiveSLAMWrapper::newGpsCallback(const sensor_msgs::NavSatFix& gps, Timestamp imgTime)
+void LiveSLAMWrapper::newGpsCallback(const sensor_msgs::NavSatFix& gps, Timestamp gpsTime)
 {
 	++ gpsSeqNumber;
 	//monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
 	gpsNow = gps;
+	gpsTimeStamp = gpsTime;
 }
 
 

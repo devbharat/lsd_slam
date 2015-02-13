@@ -887,10 +887,10 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
 
 }
 
-void SlamSystem::trackFrame(uchar* image, sensor_msgs::NavSatFix& gps, unsigned int frameID, bool blockUntilMapped, double timestamp)
+void SlamSystem::trackFrame(uchar* image, sensor_msgs::NavSatFix& gps, double gpsTimeStamp, unsigned int frameID, bool blockUntilMapped, double timestamp)
 {
 
-	printf("%f \n",gps.latitude);
+	printf("%f %f\n",gpsTimeStamp, timestamp);
 
 	// Create new frame
 	std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image));
