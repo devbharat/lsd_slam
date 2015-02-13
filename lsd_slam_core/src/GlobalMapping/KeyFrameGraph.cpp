@@ -282,6 +282,7 @@ void KeyFrameGraph::addKeyFrame(Frame* frame)
 	vertex->setMarginalized(false);
 
 #ifdef USE_GTSAM_OPT
+	// check for diff initializations
 	initialEstimateGtsam.insert(frame->id(),moses3FromSim3(camToWorld_estimate)); // Notice frameID are increasing, but not consicutive!
 #endif
 
@@ -442,7 +443,7 @@ int KeyFrameGraph::optimize(int num_iterations)
 	//DEBUGresultGtsam = optimizerGtsam.optimize();
 	gtsam::LevenbergMarquardtOptimizer optimizerGtsam(graphGtsam, initialEstimateGtsam);
 	resultGtsam = optimizerGtsam.optimize();
-	graphGtsam.print("Graph\n");
+	//graphGtsam.print("Graph\n");
 	gtsam::Marginals marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
 #endif
 

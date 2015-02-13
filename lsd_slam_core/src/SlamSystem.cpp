@@ -1603,6 +1603,8 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 	keyFrameGraph->addElementsFromBuffer();
 	newConstraintMutex.unlock();
 
+	// DEBUG
+	//keyFrameGraph->resultGtsam.print("Result\n");
 
 	// Do the optimization. This can take quite some time!
 	int its = keyFrameGraph->optimize(itsPerTry);
@@ -1616,6 +1618,7 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 	float sum = 0;
 	for(size_t i=0;i<keyFrameGraph->keyframesAll.size(); i++)
 	{
+
 		// set edge error sum to zero
 		keyFrameGraph->keyframesAll[i]->edgeErrorSum = 0;
 		keyFrameGraph->keyframesAll[i]->edgesNum = 0;
@@ -1626,6 +1629,22 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 
 		// get change from last optimization
 		Sim3 a = keyFrameGraph->keyframesAll[i]->pose->graphVertex->estimate();
+		// apply gtsam results
+		//Sim3 a = sim3FromMoses3(keyFrameGraph->resultGtsam.at<gtsam::Moses3>(keyFrameGraph->keyframesAll[i]->id()));
+
+#ifdef USE_GTSAM_OPT
+		//DEBUG
+		//cout << keyFrameGraph->keyframesAll[i]->id() <<endl;
+		if(keyFrameGraph->resultGtsam.exists(keyFrameGraph->keyframesAll[i]->id())){
+			//cout<<"exists"<<endl;
+			a = sim3FromMoses3(keyFrameGraph->resultGtsam.at<gtsam::Moses3>(keyFrameGraph->keyframesAll[i]->id()));
+
+			//debug
+			//a.setScale(5);
+		}else{
+			cout<<"node doesnt exist"<<endl;
+		}
+#endif
 		Sim3 b = keyFrameGraph->keyframesAll[i]->getScaledCamToWorld();
 		Sophus::Vector7f diff = (a*b.inverse()).log().cast<float>();
 
@@ -1639,8 +1658,8 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 		sum +=7;
 
 		// set change
-		keyFrameGraph->keyframesAll[i]->pose->setPoseGraphOptResult(
-				keyFrameGraph->keyframesAll[i]->pose->graphVertex->estimate());
+		keyFrameGraph->keyframesAll[i]->pose->setPoseGraphOptResult(a);
+				//keyFrameGraph->keyframesAll[i]->pose->graphVertex->estimate());
 
 		// add error
 		for(auto edge : keyFrameGraph->keyframesAll[i]->pose->graphVertex->edges())

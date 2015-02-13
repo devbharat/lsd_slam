@@ -62,6 +62,7 @@ struct KFConstraintStruct
 	{
 		firstFrame = secondFrame = 0;
 		information.setZero();
+		//informationGtsam.setZero();
 		robustKernel = 0;
 		edge = 0;
 
@@ -83,6 +84,7 @@ struct KFConstraintStruct
 	Frame* secondFrame;
 	Sophus::Sim3d secondToFirst;
 	Eigen::Matrix<double, 7, 7> information;
+	//Eigen::Matrix<double, 7, 7> informationGtsam;	
 	g2o::RobustKernel* robustKernel;
 	EdgeSim3* edge;
 
@@ -249,6 +251,9 @@ public:
 	boost::mutex keyframesForRetrackMutex;
 	std::deque<Frame*> keyframesForRetrack;
 
+	//PublicForDebug
+	gtsam::Values resultGtsam;
+
 private:
 
 	/** Pose graph representation in g2o */
@@ -258,7 +263,7 @@ private:
 	gtsam::NonlinearFactorGraph graphGtsam;
 	gtsam::Values initialEstimateGtsam;	
 	//gtsam::LevenbergMarquardtOptimizer optimizerGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& );
-	gtsam::Values resultGtsam; //TODO cannot be calulated every itiration! Somehow needs to be 'merged' or stored into frame poses
+	//gtsam::Values resultGtsam; //TODO cannot be calulated every itiration! Somehow needs to be 'merged' or stored into frame poses
 	//gtsam::Marginals marginalsGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& ); //TODO same as above. Goes to information somehow
 #endif
 
