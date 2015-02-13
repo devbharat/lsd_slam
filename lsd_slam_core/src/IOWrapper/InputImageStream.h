@@ -51,6 +51,9 @@ public:
 	 */
 	inline NotifyBuffer<TimestampedMat>* getBuffer() {return imageBuffer;};
 
+	inline NotifyBuffer<TimestampedGps>* getGpsBuffer() {return gpsBuffer;};
+
+
 
 	/**
 	 * Gets the Camera Calibration. To avoid any dependencies, just as simple float / int's.
@@ -64,6 +67,8 @@ public:
 
 protected:
 	NotifyBuffer<TimestampedMat>* imageBuffer;
+	NotifyBuffer<TimestampedGps>* gpsBuffer;
+
 	float fx_, fy_, cx_, cy_;
 	int width_, height_;
 };

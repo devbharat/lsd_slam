@@ -44,11 +44,16 @@ ROSImageStreamThread::ROSImageStreamThread()
 	vid_sub          = nh_.subscribe(vid_channel,1, &ROSImageStreamThread::vidCb, this);
 
 
+	gps_sub          = nh_.subscribe("px4/raw/gps",1, &ROSImageStreamThread::gpsCb, this);
+
+
 	// wait for cam calib
 	width_ = height_ = 0;
 
 	// imagebuffer
 	imageBuffer = new NotifyBuffer<TimestampedMat>(8);
+	gpsBuffer = new NotifyBuffer<TimestampedGps>(8);
+	
 	undistorter = 0;
 	lastSEQ = 0;
 
@@ -58,6 +63,7 @@ ROSImageStreamThread::ROSImageStreamThread()
 ROSImageStreamThread::~ROSImageStreamThread()
 {
 	delete imageBuffer;
+	delete gpsBuffer;
 }
 
 void ROSImageStreamThread::setCalibration(std::string file)
@@ -142,6 +148,27 @@ void ROSImageStreamThread::vidCb(const sensor_msgs::ImageConstPtr img)
 
 	imageBuffer->pushBack(bufferItem);
 }
+
+
+void ROSImageStreamThread::gpsCb(const sensor_msgs::NavSatFixConstPtr msg)
+{
+	//printf("Heard gps\n");
+	//printf("%f",msg->latitude);
+
+	TimestampedGps bufferItem;
+	if(msg->header.stamp.toSec() != 0)
+		bufferItem.timestamp =  Timestamp(msg->header.stamp.toSec());
+	else
+		bufferItem.timestamp =  Timestamp(ros::Time::now().toSec());
+	
+	bufferItem.data.latitude = msg->latitude;
+	bufferItem.data.longitude = msg->longitude;
+	bufferItem.data.altitude = msg->altitude;
+	bufferItem.data.position_covariance = msg->position_covariance;
+
+	gpsBuffer->pushBack(bufferItem);
+}
+
 
 void ROSImageStreamThread::infoCb(const sensor_msgs::CameraInfoConstPtr info)
 {

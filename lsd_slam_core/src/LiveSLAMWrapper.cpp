@@ -41,6 +41,8 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
 	this->outputWrapper = outputWrapper;
 	imageStream->getBuffer()->setReceiver(this);
 
+	imageStream->getGpsBuffer()->setReceiver(this);
+
 	fx = imageStream->fx();
 	fy = imageStream->fy();
 	cx = imageStream->cx();
@@ -99,12 +101,28 @@ void LiveSLAMWrapper::Loop()
 				continue;
 		}
 		
+		boost::unique_lock<boost::recursive_mutex> waitGpsLock(imageStream->getGpsBuffer()->getMutex());
+		while (!fullResetRequested && !(imageStream->getGpsBuffer()->size() > 0)) {
+			notifyCondition.wait(waitGpsLock);
+		}
+		waitGpsLock.unlock();
+
+
 		TimestampedMat image = imageStream->getBuffer()->first();
 		imageStream->getBuffer()->popFront();
+
+		
+
+		TimestampedGps gps = imageStream->getGpsBuffer()->first();
+		imageStream->getGpsBuffer()->popFront();
+	
 		
 		// process image
 		//Util::displayImage("MyVideo", image.data);
 		newImageCallback(image.data, image.timestamp);
+
+		newGpsCallback(gps.data, gps.timestamp);
+
 	}
 }
 
@@ -134,9 +152,19 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
 	}
 	else if(isInitialized && monoOdometry != nullptr)
 	{
-		monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
+		monoOdometry->trackFrame(grayImg.data, gpsNow,imageSeqNumber,false,imgTime.toSec());
 	}
 }
+
+void LiveSLAMWrapper::newGpsCallback(const sensor_msgs::NavSatFix& gps, Timestamp imgTime)
+{
+	++ gpsSeqNumber;
+	//monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
+	gpsNow = gps;
+}
+
+
+
 
 void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
 {
@@ -181,6 +209,8 @@ void LiveSLAMWrapper::resetAll()
 	}
 	imageSeqNumber = 0;
 	isInitialized = false;
+
+	gpsSeqNumber = 0;
 
 	Util::closeAllWindows();
 

@@ -30,6 +30,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <sensor_msgs/NavSatFix.h>
 
 #include "util/Undistorter.h"
 
@@ -62,7 +63,9 @@ public:
 	
 	// get called on ros-message callbacks
 	void vidCb(const sensor_msgs::ImageConstPtr img);
+	void gpsCb(const sensor_msgs::NavSatFix::ConstPtr msg);
 	void infoCb(const sensor_msgs::CameraInfoConstPtr info);
+
 
 private:
 
@@ -73,6 +76,8 @@ private:
 
 	std::string vid_channel;
 	ros::Subscriber vid_sub;
+
+	ros::Subscriber gps_sub;
 
 	int lastSEQ;
 };

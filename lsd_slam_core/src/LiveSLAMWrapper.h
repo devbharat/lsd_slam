@@ -29,6 +29,10 @@
 #include "IOWrapper/TimestampedObject.h"
 #include "util/SophusUtil.h"
 
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <sensor_msgs/NavSatFix.h>
+
 namespace cv {
 	class Mat;
 }
@@ -68,6 +72,8 @@ public:
 	/** Callback function for new RGB images. */
 	void newImageCallback(const cv::Mat& img, Timestamp imgTime);
 
+	void newGpsCallback(const sensor_msgs::NavSatFix& gps, Timestamp imgTime);
+
 	/** Writes the given time and pose to the outFile. */
 	void logCameraPose(const SE3& camToWorld, double time);
 	
@@ -95,6 +101,9 @@ private:
 
 
 	int imageSeqNumber;
+	int gpsSeqNumber;
+
+	sensor_msgs::NavSatFix gpsNow;
 
 };
 

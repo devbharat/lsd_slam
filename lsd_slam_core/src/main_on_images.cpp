@@ -216,7 +216,7 @@ int main( int argc, char** argv )
 	cv::Mat image = cv::Mat(h,w,CV_8U);
 	int runningIDX=0;
 	float fakeTimeStamp = 0;
-
+	sensor_msgs::NavSatFix fakeGps;
 	ros::Rate r(hz);
 
 	for(unsigned int i=0;i<files.size();i++)
@@ -241,7 +241,7 @@ int main( int argc, char** argv )
 		if(runningIDX == 0)
 			system->randomInit(image.data, fakeTimeStamp, runningIDX);
 		else
-			system->trackFrame(image.data, runningIDX ,hz == 0,fakeTimeStamp);
+			system->trackFrame(image.data, fakeGps,runningIDX ,hz == 0,fakeTimeStamp);
 		runningIDX++;
 		fakeTimeStamp+=0.03;
 

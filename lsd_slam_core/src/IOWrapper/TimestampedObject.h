@@ -25,6 +25,10 @@
 
 #include <opencv2/core/core.hpp>
 
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <sensor_msgs/NavSatFix.h>
+
 #include "IOWrapper/Timestamp.h"
 
 
@@ -39,6 +43,6 @@ struct TimestampedObject
 };
 
 typedef TimestampedObject< cv::Mat > TimestampedMat;
-
+typedef TimestampedObject< sensor_msgs::NavSatFix > TimestampedGps;
 }
 #endif

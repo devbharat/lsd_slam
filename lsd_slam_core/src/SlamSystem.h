@@ -32,7 +32,9 @@
 
 #include "Tracking/Relocalizer.h"
 
-
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <sensor_msgs/NavSatFix.h>
 
 namespace lsd_slam
 {
@@ -82,7 +84,7 @@ public:
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
-	void trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp);
+	void trackFrame(uchar* image, sensor_msgs::NavSatFix& gps, unsigned int frameID, bool blockUntilMapped, double timestamp);
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
 	void finalize();
