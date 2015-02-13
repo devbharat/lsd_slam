@@ -29,6 +29,10 @@
 #include "util/settings.h"
 
 
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <sensor_msgs/NavSatFix.h>
+
 namespace lsd_slam
 {
 
@@ -46,6 +50,10 @@ public:
 
 
 	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image);
+
+	//NewConstructorwithGPS
+	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const sensor_msgs::NavSatFix& gps);
+
 
 	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image);
 
@@ -288,6 +296,10 @@ private:
 	  * representation in memory. Use release(Frame::ALL, false) to store on disk instead.
 	  * ONLY CALL THIS, if an exclusive lock on activeMutex is owned! */
 	bool minimizeInMemory();
+
+
+	//GPS position
+	sensor_msgs::NavSatFix gpsPosition;
 };
 
 

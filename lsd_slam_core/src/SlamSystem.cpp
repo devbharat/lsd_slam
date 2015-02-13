@@ -893,7 +893,7 @@ void SlamSystem::trackFrame(uchar* image, sensor_msgs::NavSatFix& gps, double gp
 	printf("%f %f\n",gpsTimeStamp, timestamp);
 
 	// Create new frame
-	std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image));
+	std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image, gps));
 
 	if(!trackingIsGood)
 	{
