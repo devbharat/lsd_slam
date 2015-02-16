@@ -21,6 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen REQUIRED)
 find_package(X11 REQUIRED)
+find_package (GeographicLib 1.40 REQUIRED)
 include(cmake/FindG2O.cmake)
 include(cmake/FindSuiteParse.cmake)
 
@@ -49,6 +50,7 @@ catkin_package(
 # SSE flags
 add_definitions("-DUSE_ROS")
 add_definitions("-DENABLE_SSE")
+add_definitions (${GeographicLib_DEFINITIONS})
 
 # Also add some useful compiler flag
 set(CMAKE_CXX_FLAGS
@@ -95,14 +97,18 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
   ${CSPARSE_INCLUDE_DIR} #Has been set by SuiteParse
   ${CHOLMOD_INCLUDE_DIR} #Has been set by SuiteParse
+  ${GeographicLib_INCLUDE_DIRS}
 )
 
 
 # build shared library.
 add_library(lsdslam SHARED ${SOURCE_FILES})
-target_link_libraries(lsdslam ${FABMAP_LIB} ${G2O_LIBRARIES} ${catkin_LIBRARIES} csparse cxsparse X11)
+target_link_libraries(lsdslam ${FABMAP_LIB} ${G2O_LIBRARIES} ${catkin_LIBRARIES} csparse cxsparse X11 ${GeographicLib_LIBRARIES})
 #rosbuild_link_boost(lsdslam thread)
 
+
+#add_executable (program source1.cpp source2.cpp)
+#target_link_libraries (program ${GeographicLib_LIBRARIES})
 
 # build live ros node
 add_executable(live_slam src/main_live_odometry.cpp)
