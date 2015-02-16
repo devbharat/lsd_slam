@@ -409,7 +409,10 @@ bool KeyFrameGraph::addElementsFromBuffer()
 #ifdef USE_GTSAM_OPT
 		if(edge->firstFrame->id() < edge->secondFrame->id()){ //Frame id monotonically increasing. Use edges from older KF to newer KF. Somehow g2o needs bi-directional edges
 			//Add BetweenFactors
-			graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),gtsam::noiseModel::Gaussian::Information(edge->information)));
+			gtsam::noiseModel::mEstimator::Cauchy::shared_ptr myCauchyError = gtsam::noiseModel::mEstimator::Cauchy::Create(1*0.1,gtsam::noiseModel::mEstimator::Base::Block);
+			gtsam::noiseModel::Gaussian::shared_ptr odometryNoise = gtsam::noiseModel::Gaussian::Information(edge->information/15);// Weight
+			gtsam::noiseModel::Robust::shared_ptr robustOdometryNoise = gtsam::noiseModel::Robust::Create(myCauchyError,odometryNoise);
+			graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),robustOdometryNoise)); 
 			
 
 			//Add GPSFactor
@@ -423,11 +426,11 @@ bool KeyFrameGraph::addElementsFromBuffer()
 					printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsCart_x,edge->firstFrame->gpsCart_y,edge->firstFrame->gpsCart_z);			
 					double scale_init = 1;
 					gtsam::Moses3 gpsPrior(scale_init,gtsam::Rot3::rodriguez(0.0, 0.0, 0.0),P);
-					graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1,gpsPrior, gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 1, 1, 1, 1, 1, 1, 1))));
+					graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1,gpsPrior, gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1))));
 					cout << "1st Frame GPS prior" << P <<endl;
 					//graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(gtsam::Vector(3) << edge->firstFrame->gpsPosition.latitude << edge->firstFrame->gpsPosition.longitude << edge->firstFrame->gpsPosition.altitude), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 100, 100, 100))));
 				}else{
-					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(edge->firstFrame->gpsCart_x, edge->firstFrame->gpsCart_y, edge->firstFrame->gpsCart_z), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 0.0000001, 0.0000001, 0.0000001))));			
+					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(edge->firstFrame->gpsCart_x, edge->firstFrame->gpsCart_y, edge->firstFrame->gpsCart_z), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 1,1,1))));			
 					//printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
 				}
 			}
