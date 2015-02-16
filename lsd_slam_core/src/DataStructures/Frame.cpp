@@ -23,6 +23,8 @@
 #include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "Tracking/TrackingReference.h"
 
+
+using namespace GeographicLib;
 namespace lsd_slam
 {
 
@@ -54,7 +56,7 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 }
 
 //GPSconstructor
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image,  const sensor_msgs::NavSatFix& gps)
+Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image,  const sensor_msgs::NavSatFix& gps, const GeographicLib::LocalCartesian* proj)
 {
 	initialize(id, width, height, K, timestamp);
 	
@@ -76,6 +78,7 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 
 	//Assign GPS position
 	gpsPosition = gps;
+	proj->Forward(gps.latitude,gps.longitude,gps.altitude,gpsCart_x,gpsCart_y,gpsCart_z);
 	gpsFactorAdd = true;
 }
 

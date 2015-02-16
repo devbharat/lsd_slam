@@ -36,6 +36,10 @@
 #include <ros/package.h>
 #include <sensor_msgs/NavSatFix.h>
 
+#include <GeographicLib/Geodesic.hpp>
+#include <GeographicLib/Geocentric.hpp>
+#include <GeographicLib/LocalCartesian.hpp>
+
 namespace lsd_slam
 {
 
@@ -271,6 +275,8 @@ private:
 
 	void optimizationThreadLoop();
 
+
+	GeographicLib::LocalCartesian* proj;
 
 	
 };

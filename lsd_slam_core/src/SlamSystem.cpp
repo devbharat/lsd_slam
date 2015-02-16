@@ -36,6 +36,10 @@
 #include "DataStructures/FrameMemory.h"
 #include "deque"
 
+
+
+
+
 // for mkdir
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -47,7 +51,7 @@
 #include "opencv2/opencv.hpp"
 
 using namespace lsd_slam;
-
+using namespace GeographicLib;
 
 SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM)
 : SLAMEnabled(enableSLAM), relocalizer(w,h,K)
@@ -123,6 +127,20 @@ SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM)
 	nAvgTrackFrame = nAvgOptimizationIteration = nAvgFindConstraintsItaration = nAvgFindReferences = 0;
 	gettimeofday(&lastHzUpdate, NULL);
 
+	/*
+	const GeographicLib::Geodesic& geod = GeographicLib::Geodesic::WGS84();
+  // Distance from JFK to LHR
+  	double
+    lat1 = 40.6, lon1 = -73.8, // JFK Airport
+    lat2 = 51.6, lon2 = -0.5;  // LHR Airport
+  	double s12;
+  	geod.Inverse(lat1, lon1, lat2, lon2, s12);
+  	cout << s12 / 1000 << " km\n";
+  	proj = new LocalCartesian(lat1, lon1, 0);
+  	double x,y,z;
+  	proj->Forward(lat2,lon2,0,x,y,z);
+  	cout << x << " " << y << " " << z << "\n";
+  	*/
 }
 
 SlamSystem::~SlamSystem()
@@ -161,6 +179,8 @@ SlamSystem::~SlamSystem()
 
 	// delte keyframe graph
 	delete keyFrameGraph;
+
+	delete proj;
 
 	FrameMemory::getInstance().releaseBuffes();
 
@@ -864,7 +884,9 @@ void SlamSystem::randomInit(uchar* image, sensor_msgs::NavSatFix& gps, double ti
 
 	currentKeyFrameMutex.lock();
 
-	currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image, gps));
+	proj = new LocalCartesian(gps.latitude, gps.longitude, gps.altitude);
+
+	currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image, gps, proj));
 	map->initializeRandomly(currentKeyFrame.get());
 	keyFrameGraph->addFrame(currentKeyFrame.get());
 
@@ -893,7 +915,7 @@ void SlamSystem::trackFrame(uchar* image, sensor_msgs::NavSatFix& gps, double gp
 	//printf("%f %f %f\n",gps.latitude,gps.longitude,gps.altitude);
 
 	// Create new frame
-	std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image, gps));
+	std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image, gps, proj));
 
 	//printf("TRACKING %d with GPS %f %f %f \n", trackingNewFrame->id(), trackingNewFrame->gpsPosition.latitude, trackingNewFrame->gpsPosition.longitude, trackingNewFrame->gpsPosition.altitude);
 

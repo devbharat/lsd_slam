@@ -33,6 +33,10 @@
 #include <ros/package.h>
 #include <sensor_msgs/NavSatFix.h>
 
+#include <GeographicLib/Geodesic.hpp>
+#include <GeographicLib/Geocentric.hpp>
+#include <GeographicLib/LocalCartesian.hpp>
+
 namespace lsd_slam
 {
 
@@ -52,7 +56,7 @@ public:
 	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image);
 
 	//NewConstructorwithGPS
-	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const sensor_msgs::NavSatFix& gps);
+	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const sensor_msgs::NavSatFix& gps, const GeographicLib::LocalCartesian* proj);
 
 
 	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image);
@@ -215,6 +219,9 @@ public:
 
 	//GPS position
 	sensor_msgs::NavSatFix gpsPosition;
+	double gpsCart_x;
+	double gpsCart_y;
+	double gpsCart_z;
 	bool gpsFactorAdd;
 
 private:

@@ -417,16 +417,16 @@ bool KeyFrameGraph::addElementsFromBuffer()
 				//make unary if KFid is 1.
 				edge->firstFrame->gpsFactorAdd=false; // Do not add his gps factor again
 				if(edge->firstFrame->id() == 1){
-					gtsam::Point3 P(edge->firstFrame->gpsPosition.latitude, edge->firstFrame->gpsPosition.longitude, edge->firstFrame->gpsPosition.altitude);
+					gtsam::Point3 P(edge->firstFrame->gpsCart_x, edge->firstFrame->gpsCart_y, edge->firstFrame->gpsCart_z);
 					//printf("%f %f %f\n",edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
 					//cout << P;
-					printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);			
+					printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsCart_x,edge->firstFrame->gpsCart_y,edge->firstFrame->gpsCart_z);			
 					gtsam::Moses3 gpsPrior(gtsam::Rot3::rodriguez(0.0, 0.0, 0.0),P);
 					graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1,gpsPrior, gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 1, 1, 1, 1, 1, 1, 1))));
 					cout << "1st Frame GPS prior" << P <<endl;
 					//graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(gtsam::Vector(3) << edge->firstFrame->gpsPosition.latitude << edge->firstFrame->gpsPosition.longitude << edge->firstFrame->gpsPosition.altitude), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 100, 100, 100))));
 				}else{
-					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(edge->firstFrame->gpsPosition.latitude, edge->firstFrame->gpsPosition.longitude, edge->firstFrame->gpsPosition.altitude), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 0.00001, 0.00001, 0.00001))));			
+					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(edge->firstFrame->gpsCart_x, edge->firstFrame->gpsCart_y, edge->firstFrame->gpsCart_z), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 0.00001, 0.00001, 0.00001))));			
 					//printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
 				}
 			}
