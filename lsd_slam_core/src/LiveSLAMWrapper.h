@@ -88,6 +88,9 @@ private:
 	// initialization stuff
 	bool isInitialized;
 
+	//gotGps
+	bool gotGps;
+
 
 
 	// monoOdometry

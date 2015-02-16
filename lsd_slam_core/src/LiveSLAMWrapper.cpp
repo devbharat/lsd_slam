@@ -54,6 +54,7 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
 
 
 	isInitialized = false;
+	gotGps = false;
 
 
 	Sophus::Matrix3f K_sophus;
@@ -145,9 +146,9 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
 
 
 	// need to initialize
-	if(!isInitialized)
+	if(!isInitialized && gotGps)
 	{
-		monoOdometry->randomInit(grayImg.data, imgTime.toSec(), 1);
+		monoOdometry->randomInit(grayImg.data,gpsNow,imgTime.toSec(), 1);
 		isInitialized = true;
 	}
 	else if(isInitialized && monoOdometry != nullptr)
@@ -158,6 +159,7 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
 
 void LiveSLAMWrapper::newGpsCallback(const sensor_msgs::NavSatFix& gps, Timestamp gpsTime)
 {
+	gotGps = true;
 	++ gpsSeqNumber;
 	//monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
 	gpsNow = gps;

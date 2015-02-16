@@ -97,9 +97,10 @@ KeyFrameGraph::KeyFrameGraph()
 	//marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
 
 	//DEBUG adding initial unary edge
-	gtsam::Moses3 priorMean(moses3FromSim3(Sophus::Sim3d())); // prior at origin
-	gtsam::noiseModel::Diagonal::shared_ptr priorNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01));
-	graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1, priorMean, priorNoise));
+	// NEED to START with 1st GPS!
+	//gtsam::Moses3 priorMean(moses3FromSim3(Sophus::Sim3d())); // prior at origin
+	//gtsam::noiseModel::Diagonal::shared_ptr priorNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 1, 1, 1, 1, 1, 1, 1));
+	//graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1, priorMean, priorNoise));
 
 #endif
 
@@ -391,9 +392,7 @@ bool KeyFrameGraph::addElementsFromBuffer()
 	for (auto newKF : newKeyframesBuffer)
 	{
 		graph.addVertex(newKF->pose->graphVertex);
-#ifdef USE_GTSAM_OPT
-		//Add GPSlike Factors here
-#endif	
+	
 		assert(!newKF->pose->isInGraph);
 		newKF->pose->isInGraph = true;
 
@@ -408,8 +407,31 @@ bool KeyFrameGraph::addElementsFromBuffer()
 	{
 		graph.addEdge(edge->edge);
 #ifdef USE_GTSAM_OPT
-		//Add BetweenFactors
-		graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),gtsam::noiseModel::Gaussian::Information(edge->information)));
+		if(edge->firstFrame->id() < edge->secondFrame->id()){ //Frame id monotonically increasing. Use edges from older KF to newer KF. Somehow g2o needs bi-directional edges
+			//Add BetweenFactors
+			graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),gtsam::noiseModel::Gaussian::Information(edge->information)));
+			
+
+			//Add GPSFactor
+			if(edge->firstFrame->gpsFactorAdd){
+				//make unary if KFid is 1.
+				edge->firstFrame->gpsFactorAdd=false; // Do not add his gps factor again
+				if(edge->firstFrame->id() == 1){
+					gtsam::Point3 P(edge->firstFrame->gpsPosition.latitude, edge->firstFrame->gpsPosition.longitude, edge->firstFrame->gpsPosition.altitude);
+					//printf("%f %f %f\n",edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
+					//cout << P;
+					printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);			
+					gtsam::Moses3 gpsPrior(gtsam::Rot3::rodriguez(0.0, 0.0, 0.0),P);
+					graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1,gpsPrior, gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 1, 1, 1, 1, 1, 1, 1))));
+					cout << "1st Frame GPS prior" << P <<endl;
+					//graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(gtsam::Vector(3) << edge->firstFrame->gpsPosition.latitude << edge->firstFrame->gpsPosition.longitude << edge->firstFrame->gpsPosition.altitude), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 100, 100, 100))));
+				}else{
+					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(edge->firstFrame->gpsPosition.latitude, edge->firstFrame->gpsPosition.longitude, edge->firstFrame->gpsPosition.altitude), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 0.00001, 0.00001, 0.00001))));			
+					//printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
+				}
+			}
+		}
+
 #endif	
 
 		added = true;
@@ -441,10 +463,16 @@ int KeyFrameGraph::optimize(int num_iterations)
 	
 #ifdef USE_GTSAM_OPT
 	//DEBUGresultGtsam = optimizerGtsam.optimize();
+	//graphGtsam.print("\nGraphWithGPS:\n"); // print
 	gtsam::LevenbergMarquardtOptimizer optimizerGtsam(graphGtsam, initialEstimateGtsam);
-	resultGtsam = optimizerGtsam.optimize();
-	//graphGtsam.print("Graph\n");
-	gtsam::Marginals marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
+	graphGtsam.print("\nGraphWithGPS:\n"); // print
+	if(graphGtsam.size() > 10){
+		begin_optimizing = true;
+		resultGtsam = optimizerGtsam.optimize();
+
+		resultGtsam.print("Final Result:\n");
+		gtsam::Marginals marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
+	}
 #endif
 
 	return graph.optimize(num_iterations, false);

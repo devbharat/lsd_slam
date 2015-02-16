@@ -239,7 +239,7 @@ int main( int argc, char** argv )
 		assert(image.type() == CV_8U);
 
 		if(runningIDX == 0)
-			system->randomInit(image.data, fakeTimeStamp, runningIDX);
+			system->randomInit(image.data, fakeGps, fakeTimeStamp, runningIDX);
 		else
 			system->trackFrame(image.data, fakeGps, fakeTimeStamp,runningIDX ,hz == 0,fakeTimeStamp);
 		runningIDX++;

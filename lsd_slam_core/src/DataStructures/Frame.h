@@ -213,6 +213,10 @@ public:
 	int numMappablePixels;
 	float meanInformation;
 
+	//GPS position
+	sensor_msgs::NavSatFix gpsPosition;
+	bool gpsFactorAdd;
+
 private:
 
 	void require(int dataFlags, int level = 0);
@@ -297,9 +301,6 @@ private:
 	  * ONLY CALL THIS, if an exclusive lock on activeMutex is owned! */
 	bool minimizeInMemory();
 
-
-	//GPS position
-	sensor_msgs::NavSatFix gpsPosition;
 };
 
 

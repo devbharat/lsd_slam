@@ -35,6 +35,7 @@
 #include <gtsam/inference/Key.h>
 #include <gtsam/slam/BetweenFactor.h>
 #include <gtsam/slam/PriorFactor.h>
+#include <gtsam/navigation/GPSFactor.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
@@ -253,7 +254,7 @@ public:
 
 	//PublicForDebug
 	gtsam::Values resultGtsam;
-
+	bool begin_optimizing = false;
 private:
 
 	/** Pose graph representation in g2o */

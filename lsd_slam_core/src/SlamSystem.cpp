@@ -854,7 +854,7 @@ void SlamSystem::gtDepthInit(uchar* image, float* depth, double timeStamp, int i
 }
 
 
-void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
+void SlamSystem::randomInit(uchar* image, sensor_msgs::NavSatFix& gps, double timeStamp, int id)
 {
 	printf("Doing Random initialization!\n");
 
@@ -864,7 +864,7 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
 
 	currentKeyFrameMutex.lock();
 
-	currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image));
+	currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image, gps));
 	map->initializeRandomly(currentKeyFrame.get());
 	keyFrameGraph->addFrame(currentKeyFrame.get());
 
@@ -890,10 +890,12 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
 void SlamSystem::trackFrame(uchar* image, sensor_msgs::NavSatFix& gps, double gpsTimeStamp, unsigned int frameID, bool blockUntilMapped, double timestamp)
 {
 
-	printf("%f %f\n",gpsTimeStamp, timestamp);
+	//printf("%f %f %f\n",gps.latitude,gps.longitude,gps.altitude);
 
 	// Create new frame
 	std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image, gps));
+
+	//printf("TRACKING %d with GPS %f %f %f \n", trackingNewFrame->id(), trackingNewFrame->gpsPosition.latitude, trackingNewFrame->gpsPosition.longitude, trackingNewFrame->gpsPosition.altitude);
 
 	if(!trackingIsGood)
 	{
@@ -1638,14 +1640,19 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 #ifdef USE_GTSAM_OPT
 		//DEBUG
 		//cout << keyFrameGraph->keyframesAll[i]->id() <<endl;
-		if(keyFrameGraph->resultGtsam.exists(keyFrameGraph->keyframesAll[i]->id())){
-			//cout<<"exists"<<endl;
-			a = sim3FromMoses3(keyFrameGraph->resultGtsam.at<gtsam::Moses3>(keyFrameGraph->keyframesAll[i]->id()));
+		if(keyFrameGraph->begin_optimizing){
+			if(keyFrameGraph->resultGtsam.exists(keyFrameGraph->keyframesAll[i]->id())){
+				//cout<<"mergingGTSAM"<<endl;
+				//keyFrameGraph->graphGtsam.print("\nGraphWithGPS:\n"); // print
+  
 
-			//debug
-			//a.setScale(5);
-		}else{
-			cout<<"node doesnt exist"<<endl;
+				a = sim3FromMoses3(keyFrameGraph->resultGtsam.at<gtsam::Moses3>(keyFrameGraph->keyframesAll[i]->id()));
+
+				//debug
+				//a.setScale(5);
+			}else{
+				cout<<"node doesnt exist"<<endl;
+			}
 		}
 #endif
 		Sim3 b = keyFrameGraph->keyframesAll[i]->getScaledCamToWorld();
