@@ -421,12 +421,13 @@ bool KeyFrameGraph::addElementsFromBuffer()
 					//printf("%f %f %f\n",edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
 					//cout << P;
 					printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsCart_x,edge->firstFrame->gpsCart_y,edge->firstFrame->gpsCart_z);			
-					gtsam::Moses3 gpsPrior(gtsam::Rot3::rodriguez(0.0, 0.0, 0.0),P);
+					double scale_init = 1;
+					gtsam::Moses3 gpsPrior(scale_init,gtsam::Rot3::rodriguez(0.0, 0.0, 0.0),P);
 					graphGtsam.add(gtsam::PriorFactor<gtsam::Moses3>(1,gpsPrior, gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 1, 1, 1, 1, 1, 1, 1))));
 					cout << "1st Frame GPS prior" << P <<endl;
 					//graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(gtsam::Vector(3) << edge->firstFrame->gpsPosition.latitude << edge->firstFrame->gpsPosition.longitude << edge->firstFrame->gpsPosition.altitude), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 100, 100, 100))));
 				}else{
-					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(edge->firstFrame->gpsCart_x, edge->firstFrame->gpsCart_y, edge->firstFrame->gpsCart_z), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 0.00001, 0.00001, 0.00001))));			
+					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->firstFrame->id(),gtsam::Point3(edge->firstFrame->gpsCart_x, edge->firstFrame->gpsCart_y, edge->firstFrame->gpsCart_z), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 0.0000001, 0.0000001, 0.0000001))));			
 					//printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
 				}
 			}
@@ -471,6 +472,7 @@ int KeyFrameGraph::optimize(int num_iterations)
 		resultGtsam = optimizerGtsam.optimize();
 
 		resultGtsam.print("Final Result:\n");
+		initialEstimateGtsam.print("Initial Estimate:\n");
 		gtsam::Marginals marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
 	}
 #endif
