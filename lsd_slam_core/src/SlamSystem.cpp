@@ -1671,9 +1671,10 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 				a = sim3FromMoses3(keyFrameGraph->resultGtsam.at<gtsam::Moses3>(keyFrameGraph->keyframesAll[i]->id()));
 
 				//debug
-				//a.setScale(5);
+				//cout << keyFrameGraph->keyframesAll[i]->id() << " " << keyFrameGraph->keyframesAll[i]->meanIdepth << endl;
 			}else{
 				cout<<"node doesnt exist"<<endl;
+				cout << keyFrameGraph->keyframesAll[i]->id()<<endl;
 			}
 		}
 #endif
