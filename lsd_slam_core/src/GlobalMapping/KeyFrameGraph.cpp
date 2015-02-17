@@ -468,15 +468,20 @@ int KeyFrameGraph::optimize(int num_iterations)
 #ifdef USE_GTSAM_OPT
 	//DEBUGresultGtsam = optimizerGtsam.optimize();
 	//graphGtsam.print("\nGraphWithGPS:\n"); // print
-	gtsam::LevenbergMarquardtOptimizer optimizerGtsam(graphGtsam, initialEstimateGtsam);
-	graphGtsam.print("\nGraphWithGPS:\n"); // print
-	if(graphGtsam.size() > 10){
-		begin_optimizing = true;
-		resultGtsam = optimizerGtsam.optimize();
 
-		resultGtsam.print("Final Result:\n");
-		initialEstimateGtsam.print("Initial Estimate:\n");
-		gtsam::Marginals marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
+	if(graphGtsam.keys().size() == initialEstimateGtsam.size()){
+		gtsam::LevenbergMarquardtOptimizer optimizerGtsam(graphGtsam, initialEstimateGtsam);
+		//graphGtsam.print("\nGraphWithGPS:\n"); // print
+		if(graphGtsam.size() > 10){
+			begin_optimizing = true;
+			resultGtsam = optimizerGtsam.optimize();
+
+			//resultGtsam.print("Final Result:\n");
+			//initialEstimateGtsam.print("Initial Estimate:\n");
+			gtsam::Marginals marginalsGtsam(graphGtsam, resultGtsam); //TODO same as above. Goes to information somehow
+		}
+	}else{
+		cout << "Graph size " <<graphGtsam.size()<<" not equal to value size " << initialEstimateGtsam.size()<<endl;
 	}
 #endif
 
