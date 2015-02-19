@@ -253,20 +253,21 @@ public:
 	std::deque<Frame*> keyframesForRetrack;
 
 	//PublicForDebug
-	gtsam::Values resultGtsam;
-	bool begin_optimizing = false;
-private:
-
-	/** Pose graph representation in g2o */
-	g2o::SparseOptimizer graph;
-
 #ifdef USE_GTSAM_OPT
+	gtsam::Values resultGtsam;
 	gtsam::NonlinearFactorGraph graphGtsam;
 	gtsam::Values initialEstimateGtsam;	
 	//gtsam::LevenbergMarquardtOptimizer optimizerGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& );
 	//gtsam::Values resultGtsam; //TODO cannot be calulated every itiration! Somehow needs to be 'merged' or stored into frame poses
 	//gtsam::Marginals marginalsGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& ); //TODO same as above. Goes to information somehow
 #endif
+	bool begin_optimizing = false;
+private:
+
+	/** Pose graph representation in g2o */
+	g2o::SparseOptimizer graph;
+
+
 
 	std::vector< Frame*, Eigen::aligned_allocator<Frame*> > newKeyframesBuffer;
 	std::vector< KFConstraintStruct*, Eigen::aligned_allocator<FramePoseStruct*> > newEdgeBuffer;

@@ -34,13 +34,15 @@ FramePoseStruct::FramePoseStruct(Frame* frame)
 {
 	cacheValidFor = -1;
 	isOptimized = false;
-	thisToParent_raw = camToWorld = camToWorld_new = Sim3();
+	thisToParent_raw = camToWorld = camToWorld_new = camToWorld_gtsam = Sim3();
 	this->frame = frame;
 	frameID = frame->id();
 	trackingParent = 0;
 	isRegisteredToGraph = false;
 	hasUnmergedPose = false;
 	isInGraph = false;
+
+	updated_gtsam = false;
 
 	this->graphVertex = nullptr;
 
@@ -75,6 +77,7 @@ void FramePoseStruct::applyPoseGraphOptResult()
 	camToWorld = camToWorld_new;
 	isOptimized = true;
 	hasUnmergedPose = false;
+	updated_gtsam = false; //so that gtsam uses camToWorld for 1st iteration
 	cacheValidCounter++;
 }
 void FramePoseStruct::invalidateCache()

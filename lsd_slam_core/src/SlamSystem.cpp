@@ -395,6 +395,9 @@ void SlamSystem::optimizationThreadLoop()
 			doFinalOptimization = false;
 		}
 		while(optimizationIteration(5, 0.02));
+		keyFrameGraph->graphGtsam.print("\nGraphWithGPS:\n"); // print
+		keyFrameGraph->resultGtsam.print("Final Result:\n");
+		keyFrameGraph->initialEstimateGtsam.print("Initial Estimate:\n");
 	}
 
 	printf("Exited optimization thread \n");
@@ -1692,7 +1695,8 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
   
 
 				a = sim3FromMoses3(keyFrameGraph->resultGtsam.at<gtsam::Moses3>(keyFrameGraph->keyframesAll[i]->id()));
-
+				keyFrameGraph->keyframesAll[i]->pose->camToWorld_gtsam = a; //used for next(if called again) gtsam iteration's initial estimate 
+				keyFrameGraph->keyframesAll[i]->pose->updated_gtsam = true;
 				//debug
 				//cout << keyFrameGraph->keyframesAll[i]->id() << " " << keyFrameGraph->keyframesAll[i]->meanIdepth << endl;
 			}else{
@@ -1714,7 +1718,7 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 		sum +=7;
 
 		// set change
-		keyFrameGraph->keyframesAll[i]->pose->setPoseGraphOptResult(a);
+		keyFrameGraph->keyframesAll[i]->pose->setPoseGraphOptResult(a); //updates camToWorld_new
 				//keyFrameGraph->keyframesAll[i]->pose->graphVertex->estimate());
 
 		// add error

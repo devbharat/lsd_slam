@@ -55,8 +55,15 @@ public:
 	// true as soon as the vertex is added to the g2o graph.
 	bool isInGraph;
 
+	//true once updated by gtsam
+	bool updated_gtsam;
+
 	// graphVertex (if the frame has one, i.e. is a KF and has been added to the graph, otherwise 0).
 	VertexSim3* graphVertex;
+
+	//gtsam_optimized result, sccessively used as initialestimate and optimized output
+	Sim3 camToWorld_gtsam;
+
 
 	void setPoseGraphOptResult(Sim3 camToWorld);
 	void applyPoseGraphOptResult();

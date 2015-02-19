@@ -410,8 +410,8 @@ bool KeyFrameGraph::addElementsFromBuffer()
 		if(edge->firstFrame->id() < edge->secondFrame->id()){ //Frame id monotonically increasing. Use edges from older KF to newer KF. Somehow g2o needs bi-directional edges
 			//Add BetweenFactors
 			gtsam::noiseModel::mEstimator::Cauchy::shared_ptr myCauchyError = gtsam::noiseModel::mEstimator::Cauchy::Create(1*0.1,gtsam::noiseModel::mEstimator::Base::Block);
-			Eigen::Matrix<double, 7, 7> weighted_information = edge->information/20;// Weight
-			weighted_information(6,6) = weighted_information(6,6)/2;// Weight
+			Eigen::Matrix<double, 7, 7> weighted_information = edge->information/5;// Weight
+			weighted_information(6,6) = weighted_information(6,6)/1;// Weight
 			gtsam::noiseModel::Gaussian::shared_ptr odometryNoise = gtsam::noiseModel::Gaussian::Information(weighted_information);
 			gtsam::noiseModel::Robust::shared_ptr robustOdometryNoise = gtsam::noiseModel::Robust::Create(myCauchyError,odometryNoise);
 			graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),robustOdometryNoise)); 
@@ -431,8 +431,20 @@ bool KeyFrameGraph::addElementsFromBuffer()
 					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->secondFrame->id(),gtsam::Point3(edge->secondFrame->gpsCart_x, edge->secondFrame->gpsCart_y, edge->secondFrame->gpsCart_z), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 1,1,1))));
 					cout << "1st Frame GPS prior" << P <<endl;
 					
-					initialEstimateGtsam.insert(edge->firstFrame->id(),moses3FromSim3(edge->firstFrame->getScaledCamToWorld())); // Notice frameID are increasing, but not consicutive!
-					initialEstimateGtsam.insert(edge->secondFrame->id(),moses3FromSim3(edge->secondFrame->getScaledCamToWorld())); // Notice frameID are increasing, but not consicutive!
+					
+					if(edge->firstFrame->pose->updated_gtsam){
+						initialEstimateGtsam.insert(edge->firstFrame->id(),moses3FromSim3(edge->firstFrame->pose->camToWorld_gtsam)); // Notice frameID are increasing, but not consicutive!
+					}else{
+						initialEstimateGtsam.insert(edge->firstFrame->id(),moses3FromSim3(edge->firstFrame->getScaledCamToWorld())); // Notice frameID are increasing, but not consicutive!
+					}				
+
+					if(edge->secondFrame->pose->updated_gtsam){
+						initialEstimateGtsam.insert(edge->secondFrame->id(),moses3FromSim3(edge->secondFrame->pose->camToWorld_gtsam)); // Notice frameID are increasing, but not consicutive!
+						cout << "Here"<<endl;
+					}else{
+						initialEstimateGtsam.insert(edge->secondFrame->id(),moses3FromSim3(edge->secondFrame->getScaledCamToWorld())); // Notice frameID are increasing, but not consicutive!
+						cout << "There"<<endl;
+					}	
 					edge->firstFrame->gpsFactorAdd=false;
 					edge->secondFrame->gpsFactorAdd=false;
 					
@@ -440,7 +452,12 @@ bool KeyFrameGraph::addElementsFromBuffer()
 				}else{
 					graphGtsam.add(boost::make_shared<gtsam::GPSFactor>(edge->secondFrame->id(),gtsam::Point3(edge->secondFrame->gpsCart_x, edge->secondFrame->gpsCart_y, edge->secondFrame->gpsCart_z), gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(3) << 1,1,1))));			
 					//printf("KFid %d with gps %f %f %f\n", edge->firstFrame->id(),edge->firstFrame->gpsPosition.latitude,edge->firstFrame->gpsPosition.longitude,edge->firstFrame->gpsPosition.altitude);
-					initialEstimateGtsam.insert(edge->secondFrame->id(),moses3FromSim3(edge->secondFrame->getScaledCamToWorld())); // Notice frameID are increasing, but not consicutive!
+					
+					if(edge->secondFrame->pose->updated_gtsam){
+						initialEstimateGtsam.insert(edge->secondFrame->id(),moses3FromSim3(edge->secondFrame->pose->camToWorld_gtsam)); // Notice frameID are increasing, but not consicutive!
+					}else{
+						initialEstimateGtsam.insert(edge->secondFrame->id(),moses3FromSim3(edge->secondFrame->getScaledCamToWorld())); // Notice frameID are increasing, but not consicutive!
+					}
 					edge->secondFrame->gpsFactorAdd=false;
 				}
 			}
@@ -476,13 +493,34 @@ int KeyFrameGraph::optimize(int num_iterations)
 	graph.initializeOptimization();
 	
 #ifdef USE_GTSAM_OPT
+	/*
+	for (auto id : graphGtsam.keys())
+	{
+		cout << id <<" ";
+	}
+	cout <<endl;
+	*/
+	
+	//Update initialEstimates
+	for (auto KF : keyframesAll)
+	{
+		if(KF->pose->isInGraph){
+			if(KF->pose->updated_gtsam){
+				initialEstimateGtsam.update(KF->id(),moses3FromSim3(KF->pose->camToWorld_gtsam)); // Notice frameID are increasing, but not consicutive!
+			}else{
+				initialEstimateGtsam.update(KF->id(),moses3FromSim3(KF->getScaledCamToWorld())); // Notice frameID are increasing, but not consicutive!
+			}
+		}else{cout << KF->id()<< " not in graph"<<endl;}
+	}
+
+
 	//DEBUGresultGtsam = optimizerGtsam.optimize();
 	//graphGtsam.print("\nGraphWithGPS:\n"); // print
 
 	if(graphGtsam.keys().size() == initialEstimateGtsam.size()){
 		gtsam::LevenbergMarquardtOptimizer optimizerGtsam(graphGtsam, initialEstimateGtsam);
 		//graphGtsam.print("\nGraphWithGPS:\n"); // print
-		if(graphGtsam.size() > 4){
+		if(graphGtsam.size() > 10){
 			begin_optimizing = true;
 			resultGtsam = optimizerGtsam.optimize();
 
