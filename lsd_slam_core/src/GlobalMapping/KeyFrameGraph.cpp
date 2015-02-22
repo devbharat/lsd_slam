@@ -386,6 +386,13 @@ bool KeyFrameGraph::addElementsFromBuffer()
 #ifdef USE_GTSAM_OPT
 	//DEBUG BIG TODO TAK needs to be in insert constraint with original information matrix
 	//gtsam::noiseModel::Diagonal::shared_ptr odometryNoise = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(7) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 1));
+	//Different robust noise error models 
+	gtsam::noiseModel::mEstimator::Cauchy::shared_ptr myCauchyError = gtsam::noiseModel::mEstimator::Cauchy::Create(2*0.1,gtsam::noiseModel::mEstimator::Base::Block);
+	gtsam::noiseModel::mEstimator::Fair::shared_ptr myFairError = gtsam::noiseModel::mEstimator::Fair::Create(1*1.3998,gtsam::noiseModel::mEstimator::Base::Block);
+	gtsam::noiseModel::mEstimator::Huber::shared_ptr myHuberError = gtsam::noiseModel::mEstimator::Huber::Create(1*1.345,gtsam::noiseModel::mEstimator::Base::Block);
+	gtsam::noiseModel::mEstimator::Tukey::shared_ptr myTukeyError = gtsam::noiseModel::mEstimator::Tukey::Create(1*4.6851,gtsam::noiseModel::mEstimator::Base::Block);
+	gtsam::noiseModel::mEstimator::Welsh::shared_ptr myWelshError = gtsam::noiseModel::mEstimator::Welsh::Create(1.0*2.9846,gtsam::noiseModel::mEstimator::Base::Block);
+	gtsam::noiseModel::mEstimator::Null::shared_ptr myNullError = gtsam::noiseModel::mEstimator::Null::Create();
 #endif	
 
 	keyframesForRetrackMutex.lock();
@@ -409,11 +416,12 @@ bool KeyFrameGraph::addElementsFromBuffer()
 #ifdef USE_GTSAM_OPT
 		if(edge->firstFrame->id() < edge->secondFrame->id()){ //Frame id monotonically increasing. Use edges from older KF to newer KF. Somehow g2o needs bi-directional edges
 			//Add BetweenFactors
-			gtsam::noiseModel::mEstimator::Cauchy::shared_ptr myCauchyError = gtsam::noiseModel::mEstimator::Cauchy::Create(1*0.1,gtsam::noiseModel::mEstimator::Base::Block);
-			Eigen::Matrix<double, 7, 7> weighted_information = edge->information/5;// Weight
+			
+
+			Eigen::Matrix<double, 7, 7> weighted_information = edge->information;// Weight
 			weighted_information(6,6) = weighted_information(6,6)/1;// Weight
 			gtsam::noiseModel::Gaussian::shared_ptr odometryNoise = gtsam::noiseModel::Gaussian::Information(weighted_information);
-			gtsam::noiseModel::Robust::shared_ptr robustOdometryNoise = gtsam::noiseModel::Robust::Create(myCauchyError,odometryNoise);
+			gtsam::noiseModel::Robust::shared_ptr robustOdometryNoise = gtsam::noiseModel::Robust::Create(myCauchyError,odometryNoise); //rohustChoose
 			graphGtsam.add(gtsam::BetweenFactor<gtsam::Moses3>(edge->firstFrame->id(),edge->secondFrame->id(),moses3FromSim3(edge->secondToFirst),robustOdometryNoise)); 
 			
 
@@ -501,9 +509,19 @@ int KeyFrameGraph::optimize(int num_iterations)
 	cout <<endl;
 	*/
 	
+	
+
 	//Update initialEstimates
 	for (auto KF : keyframesAll)
 	{
+		/*
+		//DEBUG view pose
+		if(graphGtsam.size() > 70 && notPrinted){
+			testPoseDebug.insert(KF->id(),moses3FromSim3(KF->getScaledCamToWorld()));
+			filled = true;
+		}
+		*/
+
 		if(KF->pose->isInGraph){
 			if(KF->pose->updated_gtsam){
 				initialEstimateGtsam.update(KF->id(),moses3FromSim3(KF->pose->camToWorld_gtsam)); // Notice frameID are increasing, but not consicutive!
@@ -512,6 +530,15 @@ int KeyFrameGraph::optimize(int num_iterations)
 			}
 		}else{cout << KF->id()<< " not in graph"<<endl;}
 	}
+
+	/*
+	//DEBUG
+	if(notPrinted && filled){
+		testPoseDebug.print("Final Result:\n");
+		notPrinted = false;
+	}
+	*/
+
 
 
 	//DEBUGresultGtsam = optimizerGtsam.optimize();

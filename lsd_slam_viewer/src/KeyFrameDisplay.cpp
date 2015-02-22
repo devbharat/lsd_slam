@@ -147,6 +147,8 @@ void KeyFrameDisplay::refreshPC()
 	vertexBufferNumPoints = 0;
 
 	int total = 0, displayed = 0;
+
+	//std::cout << "my_scale " << my_scale <<" my_scaledTH "<<my_scaledTH<<" my_absTH "<<my_absTH<<"\n";//DEBUG
 	for(int y=1;y<height-1;y++)
 		for(int x=1;x<width-1;x++)
 		{
@@ -159,13 +161,13 @@ void KeyFrameDisplay::refreshPC()
 			float depth = 1 / originalInput[x+y*width].idepth;
 			float depth4 = depth*depth; depth4*= depth4;
 
-
+			
 			if(originalInput[x+y*width].idepth_var * depth4 > my_scaledTH)
 				continue;
-
+			/*
 			if(originalInput[x+y*width].idepth_var * depth4 * my_scale*my_scale > my_absTH)
 				continue;
-
+			*/
 			if(my_minNearSupport > 1)
 			{
 				int nearSupport = 0;
@@ -283,9 +285,9 @@ int KeyFrameDisplay::flushPC(std::ofstream* f)
 
 			if(originalInput[x+y*width].idepth_var * depth4 > my_scaledTH)
 				continue;
-
+			/*
 			if(originalInput[x+y*width].idepth_var * depth4 * my_scale*my_scale > my_absTH)
-				continue;
+				continue;*/
 
 			if(my_minNearSupport > 1)
 			{

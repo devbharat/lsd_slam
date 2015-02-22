@@ -254,14 +254,24 @@ public:
 
 	//PublicForDebug
 #ifdef USE_GTSAM_OPT
+	/*
+	//DEBUG
+	gtsam::Values testPoseDebug;
+	bool notPrinted = true;
+	bool filled = false;
+	*/
+
+
 	gtsam::Values resultGtsam;
 	gtsam::NonlinearFactorGraph graphGtsam;
 	gtsam::Values initialEstimateGtsam;	
 	//gtsam::LevenbergMarquardtOptimizer optimizerGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& );
 	//gtsam::Values resultGtsam; //TODO cannot be calulated every itiration! Somehow needs to be 'merged' or stored into frame poses
 	//gtsam::Marginals marginalsGtsam(gtsam::NonlinearFactorGraph& , gtsam::Values& ); //TODO same as above. Goes to information somehow
-#endif
 	bool begin_optimizing = false;
+	bool print_graph = true;
+#endif
+
 private:
 
 	/** Pose graph representation in g2o */

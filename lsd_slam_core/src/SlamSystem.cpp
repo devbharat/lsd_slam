@@ -395,9 +395,12 @@ void SlamSystem::optimizationThreadLoop()
 			doFinalOptimization = false;
 		}
 		while(optimizationIteration(5, 0.02));
-		keyFrameGraph->graphGtsam.print("\nGraphWithGPS:\n"); // print
-		keyFrameGraph->resultGtsam.print("Final Result:\n");
-		keyFrameGraph->initialEstimateGtsam.print("Initial Estimate:\n");
+		if(newConstraintAdded && keyFrameGraph->graphGtsam.keys().size() > 50 && keyFrameGraph->print_graph){
+			keyFrameGraph->graphGtsam.print("\nGraphWithGPS:\n"); // print
+			keyFrameGraph->resultGtsam.print("Final Result:\n");
+			keyFrameGraph->initialEstimateGtsam.print("Initial Estimate:\n");
+			keyFrameGraph->print_graph = false;
+		}
 	}
 
 	printf("Exited optimization thread \n");

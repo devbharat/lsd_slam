@@ -45,6 +45,8 @@ void KeyFrameGraphDisplay::draw()
 	dataMutex.lock();
 	numRefreshedAlready = 0;
 
+	std::cout << " "<<keyframes.size()<<" ";
+
 	// draw keyframes
 	float color[3] = {0,0,1};
 	for(unsigned int i=0;i<keyframes.size();i++)
